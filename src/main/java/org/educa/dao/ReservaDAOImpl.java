@@ -20,7 +20,7 @@ import java.util.List;
 
 import static com.mongodb.client.model.Filters.eq;
 
-public class ReservaDAOImpl implements ReservasDAO {
+public class ReservaDAOImpl implements ReservaDAO {
 
     public static final String COLECCION = "reservas";
 
@@ -29,8 +29,10 @@ public class ReservaDAOImpl implements ReservasDAO {
         try(MongoClient mongoClient = MongoClients.create(DatabaseSettings.getURL())){
             MongoDatabase mongoDatabase = mongoClient.getDatabase(DatabaseSettings.getDB());
             MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(COLECCION);
+
             Bson filter = eq("_id", reservaToUpdate.getId());
             Bson updates = Updates.combine(
+
                     Updates.set("precio", reservaToUpdate.getPrecio().doubleValue()),
                     Updates.set("estado", reservaToUpdate.getEstado())
             );
@@ -63,6 +65,7 @@ public class ReservaDAOImpl implements ReservasDAO {
             MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(COLECCION);
 
             Document doc = new Document()
+
                     .append("matricula", reserva.getMatricula())
                     .append("dni", reserva.getDni())
                     .append("estado", reserva.getEstado())
@@ -166,28 +169,21 @@ public class ReservaDAOImpl implements ReservasDAO {
     }
 
     private ReservaWithRelations documentToReservaWithRelations(Document doc) {
-        ReservaWithRelations resRel = new ReservaWithRelations();
+        ReservaWithRelations reservaWithRelations = new ReservaWithRelations();
 
-        resRel.setId(doc.getObjectId("_id"));
-        resRel.setEstado(doc.getString("estado"));
-        Number p = (Number) doc.get("precio");
-        resRel.setPrecio(p != null ? new BigDecimal(p.toString()) : BigDecimal.ZERO);
-        resRel.setFechaIni(doc.getString("fecha_ini"));
-        resRel.setFechaFin(doc.getString("fecha_fin"));
+        reservaWithRelations.setId(doc.getObjectId("_id"));
+        reservaWithRelations.setEstado(doc.getString("estado"));
 
-        resRel.setCliente(documentToClienteEntity((Document) doc.get("cliente")));
-        resRel.setVehiculo(documentToVehiculoEntity((Document) doc.get("vehiculo")));
-        return resRel;
-    }
+        Number precio = (Number) doc.get("precio");
+        reservaWithRelations.setPrecio(precio != null ? new BigDecimal(precio.toString()) : BigDecimal.ZERO);
 
-    private ClienteEntity documentToClienteEntity(Document doc) {
-        if (doc == null) return null;
-        return new ClienteEntity(
-                doc.getObjectId("_id"),
-                doc.getString("nombre"),
-                doc.getString("apellidos"),
-                doc.getString("dni")
-        );
+        reservaWithRelations.setFechaIni(doc.getString("fecha_ini"));
+        reservaWithRelations.setFechaFin(doc.getString("fecha_fin"));
+
+        reservaWithRelations.setCliente(documentToClienteEntity((Document) doc.get("cliente")));
+        reservaWithRelations.setVehiculo(documentToVehiculoEntity((Document) doc.get("vehiculo")));
+
+        return reservaWithRelations;
     }
 
     private VehiculoEntity documentToVehiculoEntity(Document doc) {
@@ -200,5 +196,23 @@ public class ReservaDAOImpl implements ReservasDAO {
                 doc.getString("color"),
                 doc.getString("concesionario")
         );
+    }
+
+    private ClienteEntity documentToClienteEntity(Document doc) {
+
+        if (doc == null) return null;
+
+        return new ClienteEntity(
+
+                doc.getObjectId("_id"),
+
+                doc.getString("nombre"),
+
+                doc.getString("apellidos"),
+
+                doc.getString("dni")
+
+        );
+
     }
 }

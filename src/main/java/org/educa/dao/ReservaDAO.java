@@ -7,7 +7,7 @@ import org.educa.entity.ReservaWithRelations;
 import java.math.BigDecimal;
 import java.util.List;
 
-public interface ReservasDAO {
+public interface ReservaDAO {
     Long update(ReservaEntity reservaToUpdate);
 
     ReservaEntity findById(String id);
