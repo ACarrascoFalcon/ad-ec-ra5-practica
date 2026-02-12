@@ -16,7 +16,14 @@ public class ReservaService {
 
 
     public List<ReservaWithRelations> findReservasByCantidad(BigDecimal cantidad) {
-        return Collections.emptyList();
+
+        List<ReservaWithRelations> resultados = reservasDAO.findReservasByCantidad(cantidad);
+
+        if (resultados.isEmpty()) {
+            return Collections.emptyList();
+        }else {
+            return resultados;
+        }
     }
 
 
@@ -34,10 +41,10 @@ public class ReservaService {
     }
 
     public Long delete(String id) {
-        return null;
+        return reservasDAO.delete(id);
     }
 
     public List<ReservaEntity> findAll() {
-        return null;
+        return reservasDAO.findAll();
     }
 }

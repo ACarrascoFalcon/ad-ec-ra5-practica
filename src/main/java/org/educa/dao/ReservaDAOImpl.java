@@ -1,21 +1,21 @@
 package org.educa.dao;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.*;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
+import org.educa.entity.ClienteEntity;
 import org.educa.entity.ReservaEntity;
+import org.educa.entity.ReservaWithRelations;
+import org.educa.entity.VehiculoEntity;
 import org.educa.settings.DatabaseSettings;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.mongodb.client.model.Filters.eq;
@@ -23,7 +23,6 @@ import static com.mongodb.client.model.Filters.eq;
 public class ReservaDAOImpl implements ReservasDAO {
 
     public static final String COLECCION = "reservas";
-    private final Gson gson = new GsonBuilder().create();
 
     @Override
     public Long update(ReservaEntity reservaToUpdate) {
@@ -48,19 +47,9 @@ public class ReservaDAOImpl implements ReservasDAO {
             Document doc = mongoCollection.find(Filters.eq("_id", new ObjectId(id))).first();
 
             if (doc != null) {
-                ReservaEntity reserva = new ReservaEntity();
-                reserva.setId(doc.getObjectId("_id"));
-                reserva.setDni(doc.getString("dni"));
-                reserva.setMatricula(doc.getString("matricula"));
-                reserva.setEstado(doc.getString("estado"));
 
-                Number precio = (Number) doc.get("precio");
-                reserva.setPrecio(precio != null ? new BigDecimal(precio.toString()) : BigDecimal.ZERO);
+                return documentToReservaEntity(doc);
 
-                reserva.setFechaIni(LocalDate.parse(doc.getString("fecha_ini")));
-                reserva.setFechaFin(LocalDate.parse(doc.getString("fecha_fin")));
-
-                return reserva;
             }
             return null;
         }
@@ -88,16 +77,128 @@ public class ReservaDAOImpl implements ReservasDAO {
 
     @Override
     public Long delete(String id) {
-        return 0L;
+        try (MongoClient mongoClient = MongoClients.create(DatabaseSettings.getURL())) {
+            MongoDatabase mongoDatabase = mongoClient.getDatabase(DatabaseSettings.getDB());
+            MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(COLECCION);
+
+            Bson filter = eq("_id", new ObjectId(id));
+
+            return mongoCollection.deleteOne(filter).getDeletedCount();
+        }
     }
 
     @Override
     public List<ReservaEntity> findAll() {
-        return List.of();
+        List<ReservaEntity> reservas = new ArrayList<>();
+
+        try (MongoClient mongoClient = MongoClients.create(DatabaseSettings.getURL())) {
+            MongoDatabase mongoDatabase = mongoClient.getDatabase(DatabaseSettings.getDB());
+            MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(COLECCION);
+
+            FindIterable<Document> documents = mongoCollection.find();
+
+            for (Document doc : documents) {
+                reservas.add(documentToReservaEntity(doc));
+            }
+        }
+
+        return reservas;
     }
 
     @Override
-    public List<ReservaEntity> findReservasByCantidad(int cantidad) {
-        return List.of();
+    public List<ReservaWithRelations> findReservasByCantidad(BigDecimal cantidad) {
+
+        List<ReservaWithRelations> resultados = new ArrayList<>();
+
+        try (MongoClient mongoClient = MongoClients.create(DatabaseSettings.getURL())) {
+            MongoDatabase mongoDatabase = mongoClient.getDatabase(DatabaseSettings.getDB());
+
+            List<Document> pipeline = Arrays.asList(
+                    new Document("$match",
+                            new Document("precio", new Document("$gte", cantidad.doubleValue()))
+                    ),
+                    new Document("$lookup", new Document()
+                            .append("from", "clientes")
+                            .append("localField", "dni")
+                            .append("foreignField", "dni")
+                            .append("as", "cliente")
+                    ),
+                    new Document("$lookup", new Document()
+                            .append("from", "vehiculos")
+                            .append("localField", "matricula")
+                            .append("foreignField", "matricula")
+                            .append("as", "vehiculo")
+                    ),
+                    new Document("$unwind", new Document()
+                            .append("path", "$cliente")
+                            .append("preserveNullAndEmptyArrays", false)
+                    ),
+                    new Document("$unwind", new Document()
+                            .append("path", "$vehiculo")
+                            .append("preserveNullAndEmptyArrays", false)
+                    )
+            );
+
+            for (Document doc : mongoDatabase.getCollection(COLECCION).aggregate(pipeline)) {
+
+                resultados.add(documentToReservaWithRelations(doc));
+
+            }
+        }
+        return resultados;
+    }
+
+    private ReservaEntity documentToReservaEntity(Document doc) {
+        ReservaEntity reserva = new ReservaEntity();
+
+        reserva.setId(doc.getObjectId("_id"));
+        reserva.setDni(doc.getString("dni"));
+        reserva.setMatricula(doc.getString("matricula"));
+        reserva.setEstado(doc.getString("estado"));
+
+        Number precio = (Number) doc.get("precio");
+        reserva.setPrecio(precio != null ? new BigDecimal(precio.toString()) : BigDecimal.ZERO);
+
+        reserva.setFechaIni(LocalDate.parse(doc.getString("fecha_ini")));
+        reserva.setFechaFin(LocalDate.parse(doc.getString("fecha_fin")));
+
+        return reserva;
+    }
+
+    private ReservaWithRelations documentToReservaWithRelations(Document doc) {
+        ReservaWithRelations resRel = new ReservaWithRelations();
+
+        resRel.setId(doc.getObjectId("_id"));
+        resRel.setEstado(doc.getString("estado"));
+        Number p = (Number) doc.get("precio");
+        resRel.setPrecio(p != null ? new BigDecimal(p.toString()) : BigDecimal.ZERO);
+        resRel.setFechaIni(doc.getString("fecha_ini"));
+        resRel.setFechaFin(doc.getString("fecha_fin"));
+
+        resRel.setCliente(documentToClienteEntity((Document) doc.get("cliente")));
+        resRel.setVehiculo(documentToVehiculoEntity((Document) doc.get("vehiculo")));
+        return resRel;
+    }
+
+    private ClienteEntity documentToClienteEntity(Document doc) {
+        if (doc == null) return null;
+        return new ClienteEntity(
+                doc.getObjectId("_id"),
+                doc.getString("nombre"),
+                doc.getString("apellidos"),
+                doc.getString("dni")
+        );
+    }
+
+    private VehiculoEntity documentToVehiculoEntity(Document doc) {
+        if (doc == null) return null;
+        return new VehiculoEntity(
+                doc.getObjectId("_id"),
+                doc.getString("matricula"),
+                doc.getString("marca"),
+                doc.getString("modelo"),
+                doc.getString("color"),
+                doc.getString("concesionario")
+        );
     }
 }

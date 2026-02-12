@@ -2,7 +2,9 @@ package org.educa.dao;
 
 import org.bson.types.ObjectId;
 import org.educa.entity.ReservaEntity;
+import org.educa.entity.ReservaWithRelations;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface ReservasDAO {
@@ -16,5 +18,5 @@ public interface ReservasDAO {
 
     List<ReservaEntity> findAll();
 
-    List<ReservaEntity> findReservasByCantidad(int cantidad);
+    List<ReservaWithRelations> findReservasByCantidad(BigDecimal cantidad);
 }
