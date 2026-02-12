@@ -92,6 +92,11 @@ public class ReservaDAOImpl implements ReservasDAO {
     }
 
     @Override
+    public List<ReservaEntity> findAll() {
+        return List.of();
+    }
+
+    @Override
     public List<ReservaEntity> findReservasByCantidad(int cantidad) {
         return List.of();
     }
