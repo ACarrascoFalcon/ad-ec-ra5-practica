@@ -6,7 +6,7 @@ import org.educa.entity.ClienteWithRelations;
 
 public class ClienteService {
 
-    ClienteDAO clienteDAO = new ClienteDAOImpl();
+    private final ClienteDAO clienteDAO = new ClienteDAOImpl();
 
     public ClienteWithRelations findClienteByDni(String dni) {
         return clienteDAO.findClienteByDni(dni);
