@@ -15,7 +15,7 @@ public class VehiculoWithRalationsAdapter {
 
         Document cDoc = (Document) doc.get("concesionario");
         if (cDoc != null) {
-            vehiculoWithRelations.setConcesionario(new ConcesionarioEntity(cDoc.getObjectId("_id"), cDoc.getString("codigo"), cDoc.getString("nombre"), cDoc.getString("ciudad"), cDoc.getString("pais"), cDoc.getString("cp")));
+            vehiculoWithRelations.setConcesionario(new ConcesionarioEntity(cDoc.getObjectId("_id"), cDoc.getString("nombre"), cDoc.getString("ciudad"), cDoc.getString("pais"), cDoc.getString("cp")));
         }
         return vehiculoWithRelations;
     }

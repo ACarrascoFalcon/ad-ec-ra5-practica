@@ -15,8 +15,6 @@ public class ConcesionarioEntity implements Serializable {
 
     @SerializedName("_id")
     private ObjectId id;
-    @SerializedName("codigo")
-    private String codigo;
     @SerializedName("nombre")
     private String nombre;
     @SerializedName("ciudad")
