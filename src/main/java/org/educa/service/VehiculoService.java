@@ -14,6 +14,11 @@ public class VehiculoService {
 
     private final VehiculoDAOImpl vehiculoDAO = new VehiculoDAOImpl();
 
+    /**
+     * Documenta los ingresos detallados por cada vehículo de la flota.
+     *
+     * @return Lista de wrappers IngresosVehiculo con el total calculado.
+     */
     public List<IngresosVehiculo> ingresosPorVehiculo() {
         List<IngresosVehiculo> listaFinal = new ArrayList<>();
         List<Document> docs = vehiculoDAO.ingresosPorVehiculo();
@@ -26,6 +31,12 @@ public class VehiculoService {
         return listaFinal;
     }
 
+    /**
+     * Calcula el ingreso total aplicando la regla del 50% para cancelaciones.
+     *
+     * @param doc Documento con el array de reservas.
+     * @return Suma total de ingresos.
+     */
     private BigDecimal calcularIngresos(Document doc) {
         BigDecimal total = BigDecimal.ZERO;
         List<Document> reservas = doc.getList("reservas", Document.class);
