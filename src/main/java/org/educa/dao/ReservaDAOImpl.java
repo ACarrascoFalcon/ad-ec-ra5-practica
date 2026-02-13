@@ -6,14 +6,13 @@ import com.mongodb.client.model.Updates;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
-import org.educa.entity.ClienteEntity;
+import org.educa.adapters.ReservaAdapter;
+import org.educa.adapters.ReservaWithRelationsAdapter;
 import org.educa.entity.ReservaEntity;
 import org.educa.entity.ReservaWithRelations;
-import org.educa.entity.VehiculoEntity;
 import org.educa.settings.DatabaseSettings;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -50,7 +49,7 @@ public class ReservaDAOImpl implements ReservaDAO {
 
             if (doc != null) {
 
-                return documentToReservaEntity(doc);
+                return ReservaAdapter.documentToReservaEntity(doc);
 
             }
             return null;
@@ -101,7 +100,7 @@ public class ReservaDAOImpl implements ReservaDAO {
             FindIterable<Document> documents = mongoCollection.find();
 
             for (Document doc : documents) {
-                reservas.add(documentToReservaEntity(doc));
+                reservas.add(ReservaAdapter.documentToReservaEntity(doc));
             }
         }
 
@@ -144,75 +143,10 @@ public class ReservaDAOImpl implements ReservaDAO {
 
             for (Document doc : mongoDatabase.getCollection(COLECCION).aggregate(pipeline)) {
 
-                resultados.add(documentToReservaWithRelations(doc));
+                resultados.add(ReservaWithRelationsAdapter.documentToReservaWithRelations(doc));
 
             }
         }
         return resultados;
-    }
-
-    private ReservaEntity documentToReservaEntity(Document doc) {
-        ReservaEntity reserva = new ReservaEntity();
-
-        reserva.setId(doc.getObjectId("_id"));
-        reserva.setDni(doc.getString("dni"));
-        reserva.setMatricula(doc.getString("matricula"));
-        reserva.setEstado(doc.getString("estado"));
-
-        Number precio = (Number) doc.get("precio");
-        reserva.setPrecio(precio != null ? new BigDecimal(precio.toString()) : BigDecimal.ZERO);
-
-        reserva.setFechaIni(LocalDate.parse(doc.getString("fecha_ini")));
-        reserva.setFechaFin(LocalDate.parse(doc.getString("fecha_fin")));
-
-        return reserva;
-    }
-
-    private ReservaWithRelations documentToReservaWithRelations(Document doc) {
-        ReservaWithRelations reservaWithRelations = new ReservaWithRelations();
-
-        reservaWithRelations.setId(doc.getObjectId("_id"));
-        reservaWithRelations.setEstado(doc.getString("estado"));
-
-        Number precio = (Number) doc.get("precio");
-        reservaWithRelations.setPrecio(precio != null ? new BigDecimal(precio.toString()) : BigDecimal.ZERO);
-
-        reservaWithRelations.setFechaIni(doc.getString("fecha_ini"));
-        reservaWithRelations.setFechaFin(doc.getString("fecha_fin"));
-
-        reservaWithRelations.setCliente(documentToClienteEntity((Document) doc.get("cliente")));
-        reservaWithRelations.setVehiculo(documentToVehiculoEntity((Document) doc.get("vehiculo")));
-
-        return reservaWithRelations;
-    }
-
-    private VehiculoEntity documentToVehiculoEntity(Document doc) {
-        if (doc == null) return null;
-        return new VehiculoEntity(
-                doc.getObjectId("_id"),
-                doc.getString("matricula"),
-                doc.getString("marca"),
-                doc.getString("modelo"),
-                doc.getString("color"),
-                doc.getString("concesionario")
-        );
-    }
-
-    private ClienteEntity documentToClienteEntity(Document doc) {
-
-        if (doc == null) return null;
-
-        return new ClienteEntity(
-
-                doc.getObjectId("_id"),
-
-                doc.getString("nombre"),
-
-                doc.getString("apellidos"),
-
-                doc.getString("dni")
-
-        );
-
     }
 }
