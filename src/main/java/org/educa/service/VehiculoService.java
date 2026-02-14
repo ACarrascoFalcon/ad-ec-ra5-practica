@@ -1,7 +1,7 @@
 package org.educa.service;
 
 import org.bson.Document;
-import org.educa.adapters.VehiculoWithRalationsAdapter;
+import org.educa.adapters.VehiculoWithRelationsAdapter;
 import org.educa.dao.VehiculoDAOImpl;
 import org.educa.entity.VehiculoWithRelations;
 import org.educa.wrappers.IngresosVehiculo;
@@ -24,7 +24,7 @@ public class VehiculoService {
         List<Document> docs = vehiculoDAO.ingresosPorVehiculo();
 
         for (Document doc : docs) {
-            VehiculoWithRelations v = VehiculoWithRalationsAdapter.documentToVehiculoWithRelations(doc);
+            VehiculoWithRelations v = VehiculoWithRelationsAdapter.documentToVehiculoWithRelations(doc);
             BigDecimal total = calcularIngresos(doc);
             listaFinal.add(new IngresosVehiculo(v, total));
         }

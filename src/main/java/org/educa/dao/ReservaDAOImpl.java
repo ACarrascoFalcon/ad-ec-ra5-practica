@@ -19,6 +19,7 @@ import java.util.List;
 
 import static com.mongodb.client.model.Filters.eq;
 
+
 public class ReservaDAOImpl implements ReservaDAO {
 
     public static final String COLECCION = "reservas";
@@ -45,7 +46,7 @@ public class ReservaDAOImpl implements ReservaDAO {
             MongoDatabase mongoDatabase = mongoClient.getDatabase(DatabaseSettings.getDB());
             MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(COLECCION);
 
-            Document doc = mongoCollection.find(Filters.eq("_id", new ObjectId(id))).first();
+            Document doc = mongoCollection.find(eq("_id", new ObjectId(id))).first();
 
             if (doc != null) {
 
